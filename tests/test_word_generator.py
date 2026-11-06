@@ -45,3 +45,23 @@ def test_draft_and_final_gate():
 def test_template_contract_rejects_missing_table(tmp_path,complete):
     path=tmp_path/'bad.docx';Document().save(path)
     with pytest.raises(ValueError): generate_word(complete,template=path)
+
+
+def test_default_ignores_encrypted_disk_templates(monkeypatch,tmp_path,complete):
+    import core.word_generator as generator
+    import docx.api
+    bad=tmp_path/'encrypted.docx';bad.write_bytes(b'company encrypted bytes')
+    monkeypatch.setattr(generator,'DEFAULT_TEMPLATE',bad)
+    # 설치 패키지의 default.docx까지 읽을 수 없는 상황을 재현
+    monkeypatch.setattr(docx.api,'_default_docx_path',lambda:str(bad))
+    doc=Document(BytesIO(generate_word(complete,final=True)))
+    assert len(doc.tables)==9
+    assert doc.tables[0].cell(1,1).text==complete.store
+    assert bad.read_bytes()==b'company encrypted bytes'
+
+
+def test_custom_encrypted_template_fails_helpfully(tmp_path,complete):
+    path=tmp_path/'encrypted.docx';path.write_bytes(b'company encrypted bytes')
+    with pytest.raises(ValueError,match='암호화'):
+        generate_word(complete,template=path)
+    assert path.read_bytes()==b'company encrypted bytes'

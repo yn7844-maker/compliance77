@@ -21,5 +21,5 @@ else
   echo '6b85e11d9bbf07863b97b3523b1b112844c43e713df8b66418a081fd1060b3b2  .local/tessdata/kor.traineddata' | sha256sum --check -
 fi
 # 기존 템플릿/가상 출력물을 덮어쓰지 않습니다. 명시적 갱신은 generate_samples.py 사용.
-.venv/bin/python -c 'from core.word_generator import DEFAULT_TEMPLATE; assert DEFAULT_TEMPLATE.exists(), "배포 템플릿이 없습니다. scripts/generate_samples.py 실행 필요"'
+.venv/bin/python -c 'from core.word_generator import generate_word; from models.schemas import Report; assert generate_word(Report()).startswith(b"PK")'
 .venv/bin/python -m pip check

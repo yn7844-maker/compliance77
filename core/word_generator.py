@@ -1,4 +1,6 @@
 from pathlib import Path
+from zipfile import BadZipFile
+from docx.opc.exceptions import PackageNotFoundError
 from io import BytesIO
 from decimal import Decimal
 from datetime import datetime
@@ -12,6 +14,7 @@ from config.field_options import NOTE, FINAL_TEXT, NONFINAL_TEXT
 from core.collateral_calculator import calculate, won_to_thousand, valuation_amount
 from core.validation import validate_report
 from models.schemas import Report
+from core.blank_document import blank_document
 
 DEFAULT_TEMPLATE = Path(__file__).resolve().parents[1]/'templates/collateral_report.docx'
 TABLE_KEYS = ['request','targets','land','building','unit','rights','deposit','summary','opinion']
@@ -35,9 +38,9 @@ def _header_style(table):
         shade=OxmlElement('w:shd');shade.set(qn('w:fill'),'E7EDF5');cell._tc.get_or_add_tcPr().append(shade)
         for run in cell.paragraphs[0].runs: run.bold=True
 
-def create_template(path: Path = DEFAULT_TEMPLATE):
-    path.parent.mkdir(parents=True,exist_ok=True)
-    doc=Document()
+def build_template():
+    """디스크의 DOCX를 읽지 않고 기본 시연 양식을 메모리에서 만든다."""
+    doc=blank_document()
     sec=doc.sections[0]
     sec.page_width=Cm(29.7);sec.page_height=Cm(21)
     sec.top_margin=sec.bottom_margin=Cm(1.4);sec.left_margin=sec.right_margin=Cm(1.3)
@@ -63,7 +66,11 @@ def create_template(path: Path = DEFAULT_TEMPLATE):
     doc.add_paragraph('{{NONFINAL_CHECK}}')
     doc.add_paragraph('담당자: {{REVIEWER}} / 작성일: {{DATE}}')
     doc.add_paragraph('준법지원팀 업무지원 PoC · TEST / 가상 데이터 전용')
-    doc.save(path)
+    return doc
+
+def create_template(path: Path = DEFAULT_TEMPLATE):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    build_template().save(path)
 
 def _populate(table, rows):
     for row in list(table.rows)[1:]: table._tbl.remove(row._tr)
@@ -71,11 +78,17 @@ def _populate(table, rows):
         cells=table.add_row().cells
         for cell,value in zip(cells,values): cell.text=fmt(value)
 
-def generate_word(report: Report, template: Path | str = DEFAULT_TEMPLATE, final: bool = False) -> bytes:
+def generate_word(report: Report, template: Path | str | None = None, final: bool = False) -> bytes:
     errors=validate_report(report)
     if final and (errors or report.completion!='최종'):
         raise ValueError('최종본 생성 불가: ' + '; '.join(errors or ['최종 결과서 선택 필요']))
-    doc=Document(template)
+    if template is None:
+        doc=build_template()
+    else:
+        try:
+            doc=Document(template)
+        except (BadZipFile, PackageNotFoundError, OSError, KeyError) as exc:
+            raise ValueError('선택한 Word 양식을 읽을 수 없습니다. 회사 암호화 또는 파일 손상 여부를 확인하고, 기본 시연 양식을 사용하거나 승인된 정상 DOCX를 선택하세요.') from exc
     text='\n'.join(p.text for p in doc.paragraphs)
     if any(token not in text for token in ['{{STATUS}}','{{FINAL_CHECK}}','{{NONFINAL_CHECK}}','{{REVIEWER}}','{{DATE}}']):
         raise ValueError('템플릿의 상태·확인·담당자 토큰이 누락됐습니다.')

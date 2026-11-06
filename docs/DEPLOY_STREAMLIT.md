@@ -12,7 +12,7 @@
 4. Deploy를 누릅니다. Python 패키지는 루트 `requirements.txt`, 시스템 OCR은 루트 `packages.txt`에서 설치합니다. 외부 API 키나 secrets 입력은 필요하지 않습니다.
 5. 배포 후 발급된 `https://…streamlit.app` 주소로 접속합니다. 이 URL은 Streamlit이 발급하는 값이며 저장소 이름만으로 확정할 수 없습니다.
 6. 가상 패키지 case03을 불러오고, 하단의 현재 입력 최종 확인을 체크한 후 Word 다운로드를 확인합니다.
-7. `sample_data/pdf/case03_scan.pdf` 업로드로 OCR을 별도 확인합니다. 인식 오류는 STEP 3에서 수정하고 최종 확인합니다.
+7. `sample_data/pdf/case03_scan.pdf` 업로드로 OCR을 별도 확인합니다. 인식 오류는 결과서 내용 수정 영역에서 수정하고 최종 확인합니다.
 
 화면이 뜨지 않으면 Manage app의 로그에서 requirements/packages 설치 오류를 확인합니다. OCR 언어 오류는 `tesseract-ocr-kor` 설치 여부를 확인하세요. 저장소가 private인 경우 연결한 GitHub 계정과 Streamlit의 저장소 접근 권한이 필요합니다. 저장소 공개 전환은 필수가 아니며 자동으로 변경하지 않습니다.
 

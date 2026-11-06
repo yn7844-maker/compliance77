@@ -1,5 +1,7 @@
 # 실제 Word 원본으로 교체하기
 
+기본 실행은 `build_template()`과 `blank_document()`에서 파일을 읽지 않고 양식을 생성합니다. `templates/collateral_report.docx`는 교체 계약 확인용 예시이며 기본 실행의 필수 파일이 아닙니다.
+
 원본 파일은 제공되지 않았으므로 `templates/collateral_report.docx`는 명세로 만든 **시연용 양식**입니다. `generate_word(report, template=Path(...), final=True)`로 다른 템플릿을 주입할 수 있으며 원본은 수정하지 않습니다.
 
 실제 원본을 복사한 뒤 각 표의 `w:tblCaption/@w:val`에 아래 ID를 지정하세요. ID와 첫 행 헤더는 `core.word_generator.TABLE_KEYS/TABLE_HEADERS`와 일치해야 합니다. 미일치 시 빈 문서를 완성본으로 내보내지 않고 오류를 냅니다.
