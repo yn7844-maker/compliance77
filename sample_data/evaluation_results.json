@@ -1,0 +1,628 @@
+{
+  "scope": "자체 생성 가상 텍스트 PDF 8개. 스캔 OCR 및 실제 등기부 성능은 별도 검증 필요.",
+  "field_exact_match": {
+    "address": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    },
+    "area": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    },
+    "category": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    },
+    "owners": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    },
+    "rights": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    },
+    "cancellation": {
+      "passed": 8,
+      "total": 8,
+      "rate": 1.0
+    }
+  },
+  "required_field_missing_rate": 0.0,
+  "wrong_mapping_count": 0,
+  "word_generation_reopen_rate": 1.0,
+  "browser_download_success_rate": null,
+  "user_correction_count": null,
+  "report_completion_seconds": null,
+  "unmeasured_reason": "브라우저 저장 성공·담당자 수정·작성 시간은 사용자 테스트에서 별도 기록. 세션에는 수정 영역/시간/클릭 수만 표시.",
+  "details": [
+    {
+      "file": "case01_토지.pdf",
+      "seconds": 0.016,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case01_토지.pdf",
+        "address": "가상특별시 시험구 모의동 01-1",
+        "category": "대",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 01-1",
+        "area": "84.50",
+        "category": "대",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case01_토지.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case01_토지.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case01_건물.pdf",
+      "seconds": 0.008,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case01_건물.pdf",
+        "address": "가상특별시 시험구 모의동 01-1",
+        "category": "해당없음",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 01-1",
+        "area": "84.50",
+        "category": "해당없음",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case01_건물.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case01_건물.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case02_토지.pdf",
+      "seconds": 0.008,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case02_토지.pdf",
+        "address": "가상특별시 시험구 모의동 02-1",
+        "category": "대",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/2"
+          },
+          {
+            "name": "가상소유자B",
+            "share": "1/2"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 02-1",
+        "area": "84.50",
+        "category": "대",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/2"
+          },
+          {
+            "name": "가상소유자B",
+            "share": "1/2"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case02_토지.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case02_토지.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case02_건물.pdf",
+      "seconds": 0.008,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case02_건물.pdf",
+        "address": "가상특별시 시험구 모의동 02-1",
+        "category": "해당없음",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/2"
+          },
+          {
+            "name": "가상소유자B",
+            "share": "1/2"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 02-1",
+        "area": "84.50",
+        "category": "해당없음",
+        "owners": [
+          {
+            "name": "가상소유자A",
+            "share": "1/2"
+          },
+          {
+            "name": "가상소유자B",
+            "share": "1/2"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case02_건물.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case02_건물.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case03_집합건물.pdf",
+      "seconds": 0.008,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case03_집합건물.pdf",
+        "address": "가상특별시 시험구 모의동 03-1 모의아파트 제101동 제1001호",
+        "category": "해당없음",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자C",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "300000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 03-1 모의아파트 제101동 제1001호",
+        "area": "84.50",
+        "category": "해당없음",
+        "owners": [
+          {
+            "name": "가상소유자C",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "300000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case03_집합건물.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case03_집합건물.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case04_토지.pdf",
+      "seconds": 0.009,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case04_토지.pdf",
+        "address": "가상특별시 시험구 모의동 04-1",
+        "category": "대",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자D",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "100000000",
+            "status": "유효 여부 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "2",
+            "kind": "근저당권",
+            "receipt_date": "2024-06-11",
+            "amount_won": "200000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 04-1",
+        "area": "84.50",
+        "category": "대",
+        "owners": [
+          {
+            "name": "가상소유자D",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "100000000",
+            "status": "유효 여부 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "2",
+            "kind": "근저당권",
+            "receipt_date": "2024-06-11",
+            "amount_won": "200000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case04_토지.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case04_토지.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case05_건물.pdf",
+      "seconds": 0.008,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case05_건물.pdf",
+        "address": "가상특별시 시험구 모의동 05-1",
+        "category": "해당없음",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자E",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "갑구",
+            "rank": "2",
+            "kind": "가압류",
+            "receipt_date": "2024-07-12",
+            "amount_won": "50000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 05-1",
+        "area": "84.50",
+        "category": "해당없음",
+        "owners": [
+          {
+            "name": "가상소유자E",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "갑구",
+            "rank": "2",
+            "kind": "가압류",
+            "receipt_date": "2024-07-12",
+            "amount_won": "50000000",
+            "status": "유효 여부 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case05_건물.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case05_건물.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    },
+    {
+      "file": "case06_집합건물.pdf",
+      "seconds": 0.009,
+      "checks": {
+        "address": true,
+        "area": true,
+        "category": true,
+        "owners": true,
+        "rights": true,
+        "cancellation": true
+      },
+      "expected": {
+        "document": "case06_집합건물.pdf",
+        "address": "가상특별시 시험구 모의동 06-1 모의아파트 제101동 제1001호",
+        "category": "해당없음",
+        "area": "84.50",
+        "owners": [
+          {
+            "name": "가상소유자F",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "300000000",
+            "status": "말소"
+          },
+          {
+            "section": "을구",
+            "rank": "2",
+            "kind": "근저당권",
+            "receipt_date": "2024-08-12",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "actual": {
+        "address": "가상특별시 시험구 모의동 06-1 모의아파트 제101동 제1001호",
+        "area": "84.50",
+        "category": "해당없음",
+        "owners": [
+          {
+            "name": "가상소유자F",
+            "share": "1/1"
+          }
+        ],
+        "rights": [
+          {
+            "section": "갑구",
+            "rank": "1",
+            "kind": "소유권",
+            "receipt_date": "2023-03-01",
+            "amount_won": null,
+            "status": "변경 검토"
+          },
+          {
+            "section": "을구",
+            "rank": "1",
+            "kind": "근저당권",
+            "receipt_date": "2024-05-10",
+            "amount_won": "300000000",
+            "status": "말소"
+          },
+          {
+            "section": "을구",
+            "rank": "2",
+            "kind": "근저당권",
+            "receipt_date": "2024-08-12",
+            "amount_won": null,
+            "status": "변경 검토"
+          }
+        ]
+      },
+      "issues": [
+        "case06_집합건물.pdf: 소유자는 과거 등기 포함 후보입니다. 현재 소유자·지분 대조 필요",
+        "case06_집합건물.pdf: 말소선·변경·부기·누락 및 등기 완전성 수동 검토 필요"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "case": "case01",
+    "title": "단독소유 토지·건물",
+    "pdf": "case01_토지.pdf",
+    "expected": "case01_토지.json"
+  },
+  {
+    "case": "case01",
+    "title": "단독소유 토지·건물",
+    "pdf": "case01_건물.pdf",
+    "expected": "case01_건물.json"
+  },
+  {
+    "case": "case02",
+    "title": "공동소유 토지·건물",
+    "pdf": "case02_토지.pdf",
+    "expected": "case02_토지.json"
+  },
+  {
+    "case": "case02",
+    "title": "공동소유 토지·건물",
+    "pdf": "case02_건물.pdf",
+    "expected": "case02_건물.json"
+  },
+  {
+    "case": "case03",
+    "title": "집합건물 근저당권",
+    "pdf": "case03_집합건물.pdf",
+    "expected": "case03_집합건물.json"
+  },
+  {
+    "case": "case04",
+    "title": "근저당권 다수",
+    "pdf": "case04_토지.pdf",
+    "expected": "case04_토지.json"
+  },
+  {
+    "case": "case05",
+    "title": "가압류 존재",
+    "pdf": "case05_건물.pdf",
+    "expected": "case05_건물.json"
+  },
+  {
+    "case": "case06",
+    "title": "말소 근저당권",
+    "pdf": "case06_집합건물.pdf",
+    "expected": "case06_집합건물.json"
+  }
+]
