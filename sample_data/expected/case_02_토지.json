@@ -1,0 +1,21 @@
+{
+  "case": "02",
+  "label": "공동소유 토지·건물",
+  "file": "case_02_토지.pdf",
+  "address": "가상특별시 시험구 모형동 2-1",
+  "area": "120.50",
+  "owners": [
+    "가상소유자둘",
+    "가상소유자셋"
+  ],
+  "rights": [
+    {
+      "rank": "1",
+      "section": "갑구",
+      "kind": "소유권 관련 등기",
+      "received": "2024-01-02",
+      "amount_won": null,
+      "cancellation": "유효 추정"
+    }
+  ]
+}

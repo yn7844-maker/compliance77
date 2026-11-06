@@ -1,0 +1,36 @@
+{
+  "case": "04",
+  "label": "다중 근저당권",
+  "file": "case_04_집합건물.pdf",
+  "address": "가상특별시 시험구 모형동 4-1 제3층 301호",
+  "area": "120.50",
+  "owners": [
+    "가상소유자다섯"
+  ],
+  "rights": [
+    {
+      "rank": "1",
+      "section": "갑구",
+      "kind": "소유권 관련 등기",
+      "received": "2024-01-02",
+      "amount_won": null,
+      "cancellation": "유효 추정"
+    },
+    {
+      "rank": "1",
+      "section": "을구",
+      "kind": "근저당권",
+      "received": "2024-05-10",
+      "amount_won": "100000000",
+      "cancellation": "유효 추정"
+    },
+    {
+      "rank": "2",
+      "section": "을구",
+      "kind": "근저당권",
+      "received": "2024-06-11",
+      "amount_won": "200000000",
+      "cancellation": "유효 추정"
+    }
+  ]
+}

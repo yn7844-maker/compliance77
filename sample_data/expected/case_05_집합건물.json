@@ -1,0 +1,28 @@
+{
+  "case": "05",
+  "label": "가압류",
+  "file": "case_05_집합건물.pdf",
+  "address": "가상특별시 시험구 모형동 5-1 제3층 301호",
+  "area": "120.50",
+  "owners": [
+    "가상소유자여섯"
+  ],
+  "rights": [
+    {
+      "rank": "1",
+      "section": "갑구",
+      "kind": "소유권 관련 등기",
+      "received": "2024-01-02",
+      "amount_won": null,
+      "cancellation": "유효 추정"
+    },
+    {
+      "rank": "2",
+      "section": "갑구",
+      "kind": "가압류",
+      "received": "2024-07-12",
+      "amount_won": null,
+      "cancellation": "유효 추정"
+    }
+  ]
+}

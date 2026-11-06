@@ -1,63 +1,67 @@
+import hashlib
 import re
-from pathlib import PurePath
-import fitz
-from models.schemas import PageResult
+import unicodedata
+import pymupdf as fitz
+from PIL import Image
+from config.calculation_rules import MAX_FILE_BYTES, MAX_PAGES
 from core.ocr_engine import OCREngine, TesseractEngine
+from models.schemas import PageResult
 
-MAX_BYTES = 20 * 1024 * 1024
-MAX_PAGES = 40
-MAX_TOTAL_BYTES = 60 * 1024 * 1024
-MAX_FILES = 12
+def safe_filename(name: str) -> str:
+    name = unicodedata.normalize("NFKC", name.replace("\\", "/").split("/")[-1])
+    name = re.sub(r"[^가-힣a-zA-Z0-9_. -]", "_", name).strip(". ")[:100]
+    return name or "document.pdf"
 
-def validate_filename(name: str) -> str:
-    if not name or len(name) > 150 or '/' in name or '\\' in name or any(ord(c)<32 for c in name) or name.startswith('.'):
-        raise ValueError('파일명에 경로·제어문자를 사용할 수 없습니다(150자 이하).')
-    if PurePath(name).suffix.lower() != '.pdf': raise ValueError('PDF 파일만 업로드하세요.')
-    return name
+def document_id(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:16]
 
-def open_pdf(data: bytes, name: str) -> fitz.Document:
-    validate_filename(name)
-    if len(data) > MAX_BYTES: raise ValueError('파일당 최대 20MB입니다.')
-    if not data.startswith(b'%PDF-'): raise ValueError('PDF 파일 형식이 아닙니다.')
-    try: doc = fitz.open(stream=data,filetype='pdf')
-    except Exception: raise ValueError('손상되었거나 읽을 수 없는 PDF입니다.') from None
-    if doc.is_encrypted:
-        doc.close(); raise ValueError('암호화된 PDF는 지원하지 않습니다.')
-    if not 1 <= doc.page_count <= MAX_PAGES:
-        doc.close(); raise ValueError('PDF는 1~40페이지여야 합니다.')
+def open_pdf(data: bytes):
+    if not data or len(data)>MAX_FILE_BYTES: raise ValueError("PDF는 20MB 이하만 허용합니다")
+    if not data.startswith(b"%PDF-"): raise ValueError("PDF 파일 형식이 아닙니다")
+    try: doc=fitz.open(stream=data,filetype="pdf")
+    except Exception: raise ValueError("손상되었거나 지원하지 않는 PDF입니다") from None
+    if doc.needs_pass or not 0<doc.page_count<=MAX_PAGES:
+        doc.close(); raise ValueError("암호화 PDF 또는 허용 페이지 수(1~50) 초과")
     return doc
 
-def text_quality(text: str) -> bool:
-    chars = re.sub(r'\s','',text)
-    return len(chars) >= 40 and sum(c.isalnum() for c in chars)/len(chars) > .65 and chars.count('\ufffd')/len(chars) < .05
-
-def inspect_pdf(data: bytes, name: str) -> dict:
-    with open_pdf(data,name) as doc:
-        return {'파일명':name,'페이지 수':len(doc),'텍스트 추출 가능 페이지':sum(text_quality(p.get_text()) for p in doc)}
-
-def read_pdf(data: bytes, name: str, engine: OCREngine | None = None, use_ocr: bool = True) -> list[PageResult]:
-    results = []
-    with open_pdf(data,name) as doc:
-        for page in doc:
-            text = page.get_text(sort=True)
-            blocks = []
-            for block in page.get_text('dict')['blocks']:
-                for line in block.get('lines',[]):
-                    for span in line['spans']:
-                        blocks.append({'text':span['text'],'bbox':list(span['bbox']),'coordinate_space':'pdf_points'})
-            if text_quality(text):
-                results.append(PageResult(number=page.number+1,text=text,blocks=blocks))
-            elif not use_ocr:
-                results.append(PageResult(number=page.number+1,text=text,blocks=blocks,error='텍스트 품질 부족: OCR 필요'))
-            else:
-                # 한 페이지 최대 약 12MP, 큰 도면의 메모리 과점유 방지
-                scale = min(2.5, (12_000_000/max(page.rect.width*page.rect.height,1))**.5)
-                result = (engine or TesseractEngine()).recognize(page.get_pixmap(matrix=fitz.Matrix(scale,scale)).tobytes('png'),page.number+1)
+def read_pdf(data: bytes, engine: OCREngine | None = None) -> list[PageResult]:
+    results=[]
+    with open_pdf(data) as doc:
+        for i,page in enumerate(doc):
+            words=[{"text":w[4],"bbox":list(w[:4]),"confidence":None} for w in page.get_text("words",sort=True)]
+            text=page.get_text(sort=True)
+            meaningful=sum(c.isalnum() for c in text)
+            broken=text.count("�")/max(1,len(text))
+            if meaningful>=25 and broken<0.02:
+                results.append(PageResult(number=i+1,text=text,words=words))
+                continue
+            try:
+                # 픽셀 수 상한을 두어 비정상 대형 페이지로 인한 메모리 폭증 방지.
+                scale=min(2.5,(20_000_000/max(1,page.rect.width*page.rect.height))**0.5)
+                pix=page.get_pixmap(matrix=fitz.Matrix(scale,scale),alpha=False)
+                image=Image.frombytes("RGB",(pix.width,pix.height),pix.samples)
+                result=(engine or TesseractEngine()).recognize(image,i+1)
+                if not result.text.strip(): result.error="OCR 인식 텍스트 없음"
+                # 원본 PDF 좌표로 복원. 회전 보정된 좌표의 역변환도 적용.
+                for w in result.words:
+                    x0,y0,x1,y1=w["bbox"]
+                    w["layout_bbox"]=[x0/scale,y0/scale,x1/scale,y1/scale]
+                    corners=[(x0,y0),(x1,y0),(x1,y1),(x0,y1)]
+                    def inv(x,y):
+                        if result.rotation==90: return y,pix.height-x
+                        if result.rotation==180: return pix.width-x,pix.height-y
+                        if result.rotation==270: return pix.width-y,x
+                        return x,y
+                    points=[inv(x,y) for x,y in corners]
+                    w["bbox"]=[min(x for x,y in points)/scale,min(y for x,y in points)/scale,max(x for x,y in points)/scale,max(y for x,y in points)/scale]
                 results.append(result)
+            except Exception:
+                # 엔진 예외 원문은 개인정보를 포함할 수 있으므로 출력하지 않는다.
+                results.append(PageResult(number=i+1,text=text,words=words,ocr=True,error="OCR 실패: 로컬 엔진·한국어 데이터 설치 상태를 확인하고 수동 검토하세요"))
     return results
 
-def page_image(data: bytes, name: str, number: int) -> bytes:
-    with open_pdf(data,name) as doc:
-        p = doc[number-1]
-        scale = min(1.5, (4_000_000/max(p.rect.width*p.rect.height,1))**.5)
-        return p.get_pixmap(matrix=fitz.Matrix(scale,scale)).tobytes('png')
+def render_page(data: bytes, number: int) -> bytes:
+    with open_pdf(data) as doc:
+        page=doc[max(0,min(number-1,doc.page_count-1))]
+        scale=min(1.5,(4_000_000/max(1,page.rect.width*page.rect.height))**0.5)
+        return page.get_pixmap(matrix=fitz.Matrix(scale,scale),alpha=False).tobytes("png")

@@ -1,50 +1,48 @@
-from decimal import Decimal
-from datetime import date
-import re
-from config.field_options import RE_REQUEST, CONTRACTS, PURPOSES, PROPERTY_TYPES
+from config.field_options import REQUEST_TYPES, CONTRACTS, PURPOSES, PROPERTY_TYPES, DUPLICATE
 from core.collateral_calculator import calculate
 from models.schemas import Report
 
 def validate_report(r: Report) -> list[str]:
-    errors = []
-    for label, value, options in [('재의뢰 여부',r.re_request,RE_REQUEST),('대상계약',r.contract,CONTRACTS),('평가목적',r.purpose,PURPOSES)]:
-        if value not in options: errors.append(f'의뢰내역: {label} 선택 필요')
-    for label, value in [('점포명',r.store),('평가 시 고려사항',r.considerations),('의견',r.opinion),('담당자',r.reviewer)]:
-        if not value.strip(): errors.append(f'{label}: 입력 또는 해당 없음 명시 필요')
-    def amount(label, value):
-        if value is None or not value.is_finite() or value < 0: errors.append(f'{label}: 0 이상의 유한 금액/수치 필요')
-    amount('평가의뢰금액',r.requested)
-    if not r.targets: errors.append('평가대상: 최소 1건 필요')
+    errors = list(calculate(r).blockers)
+    for value, options, label in [(r.request.repeat,REQUEST_TYPES,"재의뢰 여부"),(r.request.contract,CONTRACTS,"대상계약"),(r.request.purpose,PURPOSES,"평가목적"),(r.duplicate,DUPLICATE[1:],"종합 중복담보")]:
+        if value not in options: errors.append(label+" 확인 필요")
+    for label, value in [("점포명",r.request.store),("평가 시 고려사항",r.request.considerations),("의견",r.opinion)]:
+        if not value.strip(): errors.append(label+" 입력 필요 (해당 없으면 명시)")
+    if not r.targets: errors.append("평가대상 입력 필요")
+    from fractions import Fraction
     for i,t in enumerate(r.targets,1):
-        if t.kind not in PROPERTY_TYPES or not t.address.strip() or not t.debtor.strip() or not t.owners or any(not o.name.strip() or not o.share.strip() for o in t.owners): errors.append(f'평가대상 {i}: 구분·소재지·채무자·소유자·지분 필요')
         for owner in t.owners:
-            match=re.fullmatch(r'(\d+)/(\d+)',owner.share.strip())
-            if not match or not (0 < int(match[1]) <= int(match[2])): errors.append(f'평가대상 {i}: 지분은 양수 분수(예: 1/2)로 입력 필요')
-        if t.duplicate == '미확인' or not t.stores.strip() or not t.confirmed: errors.append(f'평가대상 {i}: 중복담보·관련점포·담당자 확정 필요')
-    if not r.valuations: errors.append('평가금액: 최소 1개 행 필요')
+            try:
+                share=Fraction(owner.share)
+                if not 0<share<=1: raise ValueError()
+            except (ValueError,ZeroDivisionError): errors.append(f"평가대상 {i}: 소유자 지분을 1/1, 1/2 등으로 확인하세요")
+        if t.kind not in PROPERTY_TYPES or not t.address.strip() or not t.debtor.strip() or not t.owners or any(not o.name.strip() or not o.share.strip() for o in t.owners) or not t.related_store.strip():
+            errors.append(f"평가대상 {i}: 구분·소재지·채무자·소유자·지분·관련점포 확인 필요")
+        if t.duplicate not in DUPLICATE[1:]: errors.append(f"평가대상 {i}: 중복담보 확인 필요")
     for i,v in enumerate(r.valuations,1):
-        for label,val in [('면적',v.area),('평가금액',v.amount)]: amount(f'평가 {i} {label}',val)
-        for label,val in [('공시지가',v.public_price),('적용율',v.rate)]:
-            if val is not None: amount(f'평가 {i} {label}',val)
-        if not v.address.strip() or not v.category.strip() or not v.basis.strip() or not v.confirmed: errors.append(f'평가 {i}: 주소·지목(해당 없음 허용)·산정근거·확정 필요')
-        if (v.public_price is None or v.rate is None) and '해당 없음' not in v.basis: errors.append(f'평가 {i}: 공시지가/적용율 미사용 시 근거에 해당 없음 명시 필요')
-    if not r.rights_reviewed: errors.append('권리내역: 전체 검토(권리 없음 포함) 필요')
-    for i,x in enumerate(r.rights,1):
-        if not x.rank.strip() or not x.receipt_date.strip() or not x.kind.strip() or not x.creditor.strip() or not x.notes.strip(): errors.append(f'권리 {i}: 필수 셀 입력(해당 없음 허용) 필요')
-        if x.receipt_date and x.receipt_date != '해당 없음':
-            try: date.fromisoformat(x.receipt_date)
-            except ValueError: errors.append(f'권리 {i}: 접수일자는 YYYY-MM-DD로 입력 필요')
-        if x.kind in ['근저당권','저당권','전세권'] and x.amount_won is None and x.status!='말소': errors.append(f'권리 {i}: 채권금액 또는 전세금 확인 필요')
-        if not x.confirmed or x.decision == '미검토' or x.status in ['유효 여부 검토','변경 검토']: errors.append(f'권리 {i}: 유효/말소 여부 및 선순위 공제·제외 확인 필요')
-        if x.decision == '공제' and (x.status != '유효 확인' or x.amount_won is None): errors.append(f'권리 {i}: 말소/미확정 권리 공제 불가')
-    d = r.deposit
-    for label,v in [('a',d.a),('b',d.b),('c',d.c)]: amount(f'보증금 {label}',v)
-    if d.shops is None or d.shops < 0: errors.append('상업용 점포수: 0 이상 정수 필요')
-    if not d.reviewed or d.decision == '미검토' or not d.basis.strip() or not d.attachments.strip() or d.attachment_review == '미검토': errors.append('임차보증금: 공제 기준·첨부서류·검토 확정 필요')
-    if d.tenancy == '없음' and any(v is not None and v != 0 for v in (d.a,d.b,d.c)): errors.append('임차 없음과 보증금 금액 충돌')
-    if r.completion == '최종' and d.tenancy == '미확인': errors.append('임차 여부 미확인: 최종 결과서 불가')
-    if not r.rounding_confirmed: errors.append('천원 미만 금액 처리 기준 확인 필요')
-    if not r.evidence_reviewed: errors.append('문서 추출 누락·충돌 및 모든 증빙 대조 확인 필요')
-    if not r.reviewed: errors.append('담당자 최종 확인 필요')
-    if r.completion == '최종' and calculate(r)['d'] is None: errors.append('최종담보가치 미확정')
-    return errors
+        if not v.address.strip() or not v.category.strip() or v.area is None or not v.basis.strip():
+            errors.append(f"평가행 {i}: 주소·지목(해당 없음 허용)·면적·산정근거 필요")
+        if r.evaluation_type == "집합건물" and v.kind != "집합건물" or r.evaluation_type == "토지·건물" and v.kind == "집합건물":
+            errors.append(f"평가행 {i}: 평가 유형 불일치")
+    ids = [x.id for x in r.rights]
+    if len(ids) != len(set(ids)): errors.append("권리 ID 중복")
+    for x in r.rights:
+        if x.kind!="소유권 관련 등기" and x.amount_won is None and x.amount_thousand is None and not x.amount_not_applicable:
+            errors.append(f"권리 {x.rank}: 금액 또는 금액 해당 없음 확인 필요")
+        if x.amount_not_applicable and x.deduction:
+            errors.append(f"권리 {x.rank}: 금액 해당 없음과 선순위 공제 동시 선택 불가")
+        if not x.rank or not x.kind or not x.received or not x.creditor or not x.note:
+            errors.append(f"권리 {x.rank}: 순위·접수일·종류·권리자·비고 확인 필요")
+        from datetime import date
+        try: date.fromisoformat(x.received)
+        except ValueError: errors.append(f"권리 {x.rank}: 접수일자는 YYYY-MM-DD로 입력하세요")
+        if x.cancellation == "검토 필요": errors.append(f"권리 {x.rank}: 말소/변경 관계 확인 필요")
+        if x.amount_won is not None and x.amount_thousand is not None and x.amount_won / 1000 != x.amount_thousand:
+            errors.append(f"권리 {x.rank}: 원/천원 금액 불일치")
+    d=r.deposits
+    if d.stores is None or not d.attachments.strip() or not d.basis.strip(): errors.append("임차 점포수·첨부서류·공제 근거 필요 (해당 없음 명시)")
+    if not r.attachments_reviewed: errors.append("첨부서류 검토 미완료")
+    if r.completion != "최종" or d.tenancy == "미확인": errors.append("최종 결과서 상태 및 임차 여부 확인 필요")
+    if not r.confirmed: errors.append("담당자 최종 확인 필요")
+    if any(f.status != "사용자 확정" for f in r.facts): errors.append("자동 추출 후보 및 충돌 검토 미완료")
+    return list(dict.fromkeys(errors))

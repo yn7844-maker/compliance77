@@ -1,0 +1,16 @@
+{
+  "01": {
+    "valuation": "800000",
+    "senior": "300000",
+    "deposits": "40000",
+    "collateral": "460000",
+    "capacity": "360000"
+  },
+  "03": {
+    "valuation": "600000",
+    "senior": "150000",
+    "deposits": "20000",
+    "collateral": "430000",
+    "capacity": "330000"
+  }
+}

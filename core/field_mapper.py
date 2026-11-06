@@ -1,12 +1,19 @@
-from decimal import Decimal
-from models.schemas import Extraction, Target, Valuation
+from models.schemas import Report, Registry, Target, Owner, Valuation
 
-def unique_value(extraction: Extraction, field: str) -> str:
-    values={x.value for x in extraction.candidates if x.field==field}
-    return next(iter(values)) if len(values)==1 else ''
-
-def suggest(extraction: Extraction, kind: str) -> tuple[Target,Valuation]:
-    address=unique_value(extraction,'address')
-    area=unique_value(extraction,'area')
-    return (Target(kind=kind,address=address,owners=extraction.owners),
-            Valuation(kind=kind,address=address,category=unique_value(extraction,'category'),area=Decimal(area) if area else None))
+def map_registries(registries: list[Registry], evaluation_type: str) -> Report:
+    report=Report(evaluation_type=evaluation_type)
+    for registry in registries:
+        report.facts.extend(registry.facts)
+        report.rights.extend(registry.rights)
+        def unique(field):
+            values=list(dict.fromkeys(f.value for f in registry.facts if f.field==field and f.value))
+            return values[0] if len(values)==1 else ""
+        kind="집합건물" if evaluation_type=="집합건물" else ("토지" if unique("지목") else "건물")
+        owners=[]
+        for f in registry.facts:
+            if f.field=="소유자":
+                name,_,share=f.value.partition(" | ")
+                if (name,share) not in [(o.name,o.share) for o in owners]: owners.append(Owner(name=name,share=share))
+        report.targets.append(Target(kind=kind,address=unique("소재지"),owners=owners))
+        report.valuations.append(Valuation(kind=kind,address=unique("소재지"),category=unique("지목"),area=unique("면적") or None))
+    return report

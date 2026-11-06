@@ -2,5 +2,6 @@
 __pycache__/
 .pytest_cache/
 *.pyc
-.local/
-coverage.xml
+uploads/
+.env
+.DS_Store

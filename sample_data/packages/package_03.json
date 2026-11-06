@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "evaluation_type": "집합건물",
+  "written_on": "2026-11-06",
+  "request": {
+    "repeat": "최초",
+    "store": "가상시연점포03",
+    "contract": "가맹A타입",
+    "purpose": "신규담보",
+    "amount": "100000",
+    "considerations": "가상자료 기준 담당자 검토 완료"
+  },
+  "targets": [
+    {
+      "kind": "집합건물",
+      "address": "가상특별시 시험구 모형동 3-1 제3층 301호",
+      "debtor": "가상채무자",
+      "owners": [
+        {
+          "name": "가상소유자넷",
+          "share": "1/1"
+        }
+      ],
+      "duplicate": "없음",
+      "related_store": "가상시연점포03"
+    }
+  ],
+  "valuations": [
+    {
+      "kind": "집합건물",
+      "address": "가상특별시 시험구 모형동 3-1 제3층 301호",
+      "category": "해당 없음",
+      "area": "120.50",
+      "public_price": null,
+      "rate": null,
+      "amount": "600000",
+      "basis": "가상 평가증빙에 따른 담당자 직접 확정",
+      "reviewed": true
+    }
+  ],
+  "rights": [
+    {
+      "id": "case_03_집합건물.pdf:owner",
+      "document_id": "case_03_집합건물.pdf",
+      "section": "갑구",
+      "rank": "1",
+      "received": "2024-01-02",
+      "kind": "소유권 관련 등기",
+      "amount_raw": "",
+      "amount_won": null,
+      "amount_thousand": null,
+      "amount_not_applicable": false,
+      "creditor": "가상소유자넷",
+      "debtor": "",
+      "cancellation": "유효 추정",
+      "related_rank": "",
+      "deduction": false,
+      "reviewed": true,
+      "note": "소유권 보존 원본 대조 완료; 공제대상 아님",
+      "evidence": []
+    },
+    {
+      "id": "case_03_집합건물.pdf:mortgage",
+      "document_id": "case_03_집합건물.pdf",
+      "section": "을구",
+      "rank": "1",
+      "received": "2024-05-10",
+      "kind": "근저당권",
+      "amount_raw": "150000000",
+      "amount_won": "150000000",
+      "amount_thousand": "150000",
+      "amount_not_applicable": false,
+      "creditor": "가상푸른은행",
+      "debtor": "가상채무자",
+      "cancellation": "유효 추정",
+      "related_rank": "",
+      "deduction": true,
+      "reviewed": true,
+      "note": "가상 내부 검토로 선순위 공제 확정",
+      "evidence": []
+    }
+  ],
+  "deposits": {
+    "collective": "20000",
+    "residential": "0",
+    "stores": 0,
+    "commercial": "0",
+    "tenancy": "있음",
+    "attachments": "가상 임대차확인서 검토 완료",
+    "basis": "가상 내부 공제 확인표에서 확정한 금액",
+    "reviewed": true
+  },
+  "duplicate": "없음",
+  "opinion": "가상자료에 기초한 시연용 결과입니다. 실제 업무 판단에 사용할 수 없습니다.",
+  "completion": "최종",
+  "rounding": "정확값 유지",
+  "registry_reviewed": true,
+  "attachments_reviewed": true,
+  "confirmed": true,
+  "facts": [],
+  "audit": [],
+  "attachments": [
+    "case_03_집합건물.pdf"
+  ]
+}

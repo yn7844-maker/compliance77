@@ -1,126 +1,166 @@
 # 담보평가결과서 자동작성 시스템
 
-준법지원팀 업무지원용 **가상 데이터 PoC**. Python 3.12 / Streamlit / PyMuPDF / 로컬 Tesseract / Pydantic / python-docx.
-외부 LLM, OCR API, 사내 시스템 접속, 법률 판단 자동 확정을 사용하지 않습니다.
+준법지원팀 업무지원 PoC. **가상 등기 PDF → 로컬 인식 → 담당자 수정·확정 → 7개 영역의 편집 가능한 Word** 흐름을 제공한다. 외부 LLM, 유료 OCR, 외부 업무시스템 연동, DB를 사용하지 않는다. 실제 개인정보를 올리지 않는다.
 
 ## 빠른 실행
 
+Python **3.12 권장**. 아래 명령은 이 README가 있는 `collateral-report-poc` 폴더에서 실행한다.
+
 ```bash
-cd /workspace/compliance77  # 로컬에서는 저장소를 내려받은 경로
-python3 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-python -m pip install -r requirements.lock.txt
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-`requirements.txt`는 직접 의존성 고정 버전, `requirements.lock.txt`는 이 환경에서 검증한 전체 의존성입니다.
-텍스트 PDF와 Word 생성은 OCR 없이 동작합니다. 샘플 PDF, 정답 JSON, Word 템플릿은 저장소에 포함됩니다.
+Windows PowerShell은 `.venv\Scripts\Activate.ps1`로 활성화한다. 기본 접속 주소는 http://localhost:8501 이다. 패키지 버전은 Python 3.12에서 설치·통합 테스트한 조합으로 고정했다. 최신 버전을 자동 설치하지 않는다.
 
-현재 클라우드에서 재설치: `bash scripts/setup.sh`. TLS·한국어 언어 데이터 SHA256 검증을 유지하며 재실행할 수 있습니다.
-작업 환경은 이미 격리되어 있으므로 기존 체크아웃을 사용하며 추가 Git worktree를 만들 필요가 없습니다.
+포함된 PDF·템플릿·완성 패키지를 그대로 사용할 수 있다. 재생성하려면:
 
-## 버튼 한 번으로 초안 만들기
+```bash
+python -m scripts.generate_samples
+python -m pytest -q
+python -m scripts.evaluate
+```
 
-1. **파일 업로드**(PDF 또는 TXT, 복수 가능) 또는 **텍스트 붙여넣기**를 선택합니다.
-2. **결과서 초안 자동작성**을 누르면 인식 가능한 값을 7개 영역에 넣고 초안 다운로드를 바로 제공합니다. 입력 전에는 빈 Word를 생성하지 않습니다.
-3. 필요한 경우에만 **결과서 내용 수정 · 미확인 항목 보완**을 펼쳐 담당자가 누락된 의뢰·평가·공제 정보를 입력합니다. **인식 원문·근거 확인**에서 자료를 대조합니다.
-4. 필수 항목과 검토가 모두 완료되면 현재 입력의 최종 확인 후 최종본을 다운로드합니다. 입력을 수정하면 최종 확인은 해제됩니다. 자동작성은 법률 판단이나 평가금액을 임의 확정하지 않습니다.
+`generate_samples`는 가상 자료와 시연 템플릿을 덮어쓴다. **실제 원본 템플릿을 설치한 뒤에는 별도 백업 후 실행**한다. 앱과 핵심 로직을 분리했으므로 CLI/API/다른 프론트엔드에서 동일한 모델·파서·계산기·Word 생성기를 사용할 수 있다.
 
-PDF의 텍스트 추출·OCR은 기존 규칙을 사용합니다. TXT는 UTF-8/CP949를 지원하며 최대 200,000자입니다. 붙여넣기에는 PDF 좌표가 없고 페이지 구분 문자가 없으면 1페이지로 기록합니다. 소유자는 `가상A|1/2; 가상B|1/2` 형식으로 보완할 수 있습니다. 금액·면적은 문자열 입력 후 Decimal로 변환하며, 빈 값은 미확정입니다.
+## 화면에서 사용하기
 
-**기본 Word는 외부 DOCX 파일을 읽지 않고 메모리에서 생성합니다.** 회사 정책으로 프로젝트의 `templates/collateral_report.docx` 또는 python-docx 내부 `default.docx`가 읽히지 않아도 기본 시연 양식은 생성할 수 있습니다. 사용자 지정 양식을 명시적으로 전달하면 해당 양식만 사용하며 암호화/손상 시 안내 오류를 냅니다. 회사 DRM을 복호화하거나 우회하는 기능은 아닙니다. 내려받은 Word에도 회사 보안 정책이 적용될 수 있습니다.
+1. **평가 유형 선택**: 토지·건물 또는 집합건물. 빠른 시연은 `package_01` 또는 `package_03` 선택 후 ‘가상 사례 불러오기’를 누른다.
+2. **직접 업로드**: `sample_data/pdf`의 `case_01_토지.pdf`와 `case_01_건물.pdf`를 함께 업로드하고 ‘문서 분석 시작’을 누른다. 한 평가에 파일 최대 10개, 파일당 20MB, 총 60MB, 각 50페이지까지 허용한다. 추가 증빙은 PDF 업로드·목록·원본 조회만 지원한다.
+3. **원본 대조**: 좌측에서 문서·페이지를 선택하고 우측 후보 표를 수정한다. 후보의 근거 문서 ID·페이지·PDF 좌표·원문을 보존한다. 후보 검토는 STEP 2, 최종 결과서에 쓸 필드는 STEP 3에서 각각 확정한다. 여러 후보를 임의로 한 값으로 축약하지 않는다.
+4. **7개 영역 작성**: 금액을 천원 단위로 입력한다. 표의 행 추가/수정/삭제를 지원한다. 공동소유자는 `가상소유자 | 1/2`처럼 작성하고 여러 명이면 세미콜론으로 구분한다. 채무자를 별도로 입력한다. 넓은 표는 가로 스크롤 또는 전체 화면 버튼으로 편집한다.
+5. **권리 검토**: 원문금액(원)은 보존한다. 금액(원)을 수정하면 천원 정규화값을 다시 계산한다. 원 단위 근거가 없으면 직접금액(천원)을 입력한다. 공제할 권리의 ‘선순위 공제’와 ‘확인’을 담당자가 선택한다. 말소·검토 필요 권리는 공제 불가다. 비금전 등기·말소 행의 금액이 업무상 해당 없으면 ‘금액 해당 없음’을 명시한다. 소유권 등기는 채권최고액 해당 없음으로 출력한다.
+6. **임차 검토**: a/b/c에는 임의 추정값 대신 내부 기준에 따라 확정한 공제금액을 입력한다. 해당 없는 항목은 0, 첨부서류·근거는 ‘해당 없음’도 명시한다. 임차 미확인은 최종 결과서로 출력할 수 없다.
+7. **검증 및 다운로드**: 최종 확인을 체크하고 다운로드 구분 ‘최종’을 선택한다. 내용 변경 시 최종 확인이 해제되어 재확인이 필요하다. 누락·미확정 상태에서는 ‘초안’만 다운로드된다. 파일 안에도 초안/최종 상태와 검토사항이 표시된다. 앱 미리보기는 Word 내용 미리보기이며 실제 인쇄 페이지와 동일한 렌더러가 아니다.
 
-가상 체험은 **가상 데이터로 바로 체험 / 직접 작성**에서 case01/case03을 선택합니다. 회사 암호화로 동봉 PDF/JSON을 읽을 수 없는 경우에는 승인된 가상 텍스트를 붙여넣어 시연하세요. 실제 PDF 테스트는 `sample_data/pdf/case01_토지.pdf`와 `case01_건물.pdf` 또는 `case03_집합건물.pdf`를 사용합니다. 완성 입력 JSON은 `sample_data/expected/case01_report.json`, `case03_report.json`입니다.
+완성 패키지를 불러와도 담당자 최종 확인은 다시 해야 한다. 최종 확인 표시가 있는 것만으로 실제 업무 승인이나 법률적 판단이 이루어지는 것은 아니다.
 
-## OCR 설치
+## OCR 설치 및 설정
+
+텍스트형 PDF는 OCR 없이 PyMuPDF로 처리한다. 페이지별 텍스트 양과 깨진 문자 비율을 검사해 필요한 페이지만 OCR을 수행한다. 한국어 엔진이 없으면 스캔 페이지만 실패 상태가 되고 텍스트형 PDF는 계속 동작한다.
+
+macOS:
+
+```bash
+brew install tesseract tesseract-lang
+tesseract --list-langs
+```
 
 Ubuntu/Debian:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y tesseract-ocr tesseract-ocr-kor fonts-noto-cjk
-source .venv/bin/activate
-tesseract --list-langs  # kor, eng, osd 확인
+sudo apt-get install -y tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng
 ```
 
-macOS: `brew install tesseract tesseract-lang`. Windows는 신뢰할 수 있는 Tesseract 배포판에 kor/eng/osd를 설치하고 실행 파일을 PATH에 추가하세요. `TesseractEngine(tessdata='...')`로 언어 데이터 경로를 지정할 수 있습니다.
-이 클라우드에서는 시스템 엔진과 `.local/tessdata`의 공식 kor 데이터를 사용합니다. `scripts/setup.sh`가 해당 데이터를 검증하여 설치합니다. 시스템 한국어 데이터만 있어도 작동합니다.
+Windows는 승인된 Tesseract 설치본과 `kor`, `eng`, `osd` 언어 데이터를 설치하고 PATH를 설정한다. PATH에 없으면 `TESSERACT_CMD`에 실행 파일의 절대 경로를 지정한다. 언어 데이터 경로를 별도로 관리하면 `TESSDATA_PREFIX`를 설정한다. `tesseract --list-langs`에 **kor, eng, osd**가 표시되어야 한다.
 
-텍스트가 충분한 페이지에는 OCR을 호출하지 않습니다. 나머지 페이지만 이미지로 변환해 회전(OSD), 명암 보정, 선명화 후 인식합니다. OSD가 판단하지 못하는 짧은/복잡한 문서는 자동 회전이 보장되지 않습니다. 엔진·언어 데이터가 없거나 처리 실패하면 페이지 오류를 남깁니다. OCR 임시 파일은 pytesseract의 임시 컨텍스트에서 정리됩니다. OCR 좌표는 보정된 이미지의 픽셀, 텍스트 PDF 좌표는 PDF point입니다.
+Tesseract는 OSD 방향 감지, 회전 보정, 명암·선명도 전처리를 수행한다. 90/180/270도 회전을 지원하지만 OSD 실패 시 수동 회전·재업로드가 필요할 수 있다. 임의 기울기·심한 흐림·복잡한 표 OCR의 정확도를 보장하지 않는다. 시간 제한은 방향 감지 20초, 페이지 인식 90초다. 이미지 최대 약 2천만 픽셀로 제한한다. 좌표는 원본 PDF 페이지 좌표로 환산한다.
 
-`PaddleEngine`은 별도 어댑터입니다. PaddleOCR 3.x와 호환 PaddlePaddle, 사전에 준비한 로컬 한국어 모델 경로를 생성자에 전달하는 방식이며 기본 설치·UI에는 포함하지 않습니다. 이 환경에서는 Paddle 엔진을 설치하거나 검증하지 않았습니다. 추가 엔진 사용 시 네트워크 다운로드 없는 로컬 모델 설정을 별도로 검증해야 합니다.
+**선택 PaddleOCR 어댑터**: 기본 requirements와 분리되어 있다. Python 3.11의 별도 호환 환경에서 `requirements-ocr-paddle.txt`를 설치하고, 승인된 로컬 검출/한국어 인식/방향분류 모델 디렉터리를 UI에서 지정한다. 실행 중 자동 모델 다운로드를 의도하지 않는다. 이번 환경에서는 Paddle을 설치·실행 검증하지 않았다. 사내 배포 전 해당 플랫폼의 wheel·모델 호환성 및 네트워크 차단 상태를 반드시 확인한다. 기본 검증 엔진은 Tesseract다.
 
-## 계산·검토 원칙
+## 계산과 업무 확정
 
-- 결과서 금액은 **천원**, 권리 편집 표와 원문 금액은 **원**입니다.
-- `a = 확정한 평가금액 합계`, `b = 담당자가 공제로 확정한 유효 권리만 합산`, `c = 담당자 검토를 마친 임차보증금 공제액`, `d = a-b-c`, `담보여력 = d-의뢰금액`입니다.
-- 보증금 총액 `a+b+c`와 실제 공제 반영액을 구분합니다. `공제 없음`은 담당자의 별도 결정과 근거가 필요합니다. 미해당 보증금은 0, 첨부가 없으면 해당 없음을 직접 명시합니다.
-- 접수일자로 선순위를 자동 판정하지 않습니다. 말소 연결은 후보로만 제시하며, 변경·이전·부기·말소선·현재 소유자 여부는 원본 대조가 필요합니다.
-- `config/calculation_rules.py`에서 부동산 유형별 산식을 분리했습니다. 기본은 모두 **미확정(None)**이므로 평가금액을 직접 입력합니다. 예시 산식을 활성화하려면 내부 승인과 단위 검증이 선행돼야 합니다.
-- 원→천원 처리 기준은 담당자가 정밀 유지/절사/반올림 중 확인합니다. 정밀 유지는 정확한 나눗셈이고, 절사·반올림은 **권리 행별** 천원 변환에 적용합니다. 이 적용 범위도 사내 기준과 대조해야 합니다. 원 단위 원문은 수정 후에도 추출 근거에 남습니다.
-- 미검토를 0으로 대체하지 않으며 최종 계산은 필요한 검토가 완료된 경우에만 표시합니다. 음수 담보여력은 자동 거절/승인으로 해석하지 않습니다.
-- “추가담소” 원문 옵션은 `config/field_options.py`에 보존했습니다.
+모든 금액은 Decimal로 처리한다. 브라우저 숫자 부동소수점 변환을 피하기 위해 금액 편집은 문자열 입력 후 Decimal로 검증한다.
 
-## 구조와 확장 지점
+- a = 확인된 평가금액 합계
+- b = 담당자가 선순위 공제로 확정한 유효 권리 금액 합계
+- c = 담당자가 확정한 임차보증금 a/b/c 합계
+- 최종담보가치 = a - b - c
+- 담보여력 = 최종담보가치 - 평가의뢰금액
+
+계산에 필요한 값·권리 전체 검토·임차 검토가 미확정이면 최종 계산값을 비워 두고 ‘미확정’으로 표시한다. 선순위를 접수일자만으로 판단하지 않는다. 토지와 건물에 같은 공동담보 채권이 각각 기재되었다면 담당자가 **중복 공제 여부를 원본·공동담보목록과 대조**해야 한다. 자동 채무 병합을 하지 않는다.
+
+천원 미만 처리 기준은 기본 ‘미정’이다. 소수 원/천원 환산이 필요한 공제금액은 담당자가 ‘정확값 유지’, ‘절사’, ‘반올림’ 중 내부 기준에 맞는 값을 선택해야 계산한다. 원문 원 금액과 정확 환산 천원값은 보존하며, 종합 공제합계에는 선택한 처리 기준을 적용한다. 평가 산식은 `config/calculation_rules.py`에 분리했으며, 현 버전은 기준 미확정으로 **평가금액 직접 입력만 지원**한다. 공시지가·적용율을 빈칸으로 둔 직접평가 행은 Word에 ‘해당 없음 (직접평가)’을 출력하므로 담당자는 산정근거와 직접 평가금액을 확인해야 한다.
+
+음수 담보여력으로 승인 여부를 자동 판단하지 않는다. 제공된 주석 ‘담보여력이 부족한 경우에도 최종담보가치(d) 이내에서 담보 설정 가능’을 그대로 보존한다.
+
+## Word 양식과 교체
+
+`templates/collateral_report.docx`는 명세로 만든 시연용 **실제 Word 표**다. Word 생성 시 원본 템플릿을 읽기만 하고 덮어쓰지 않는다. 7개 영역, 8개 표(평가결과 3종 포함), 지정 열 헤더 순서, 선택값 단일 출력, 반복 헤더, 행 분할 억제, 천 단위 쉼표, 주석과 상호배타적 체크를 지원한다. 기본 A4 가로 2페이지이며 행과 긴 문장에 따라 자동으로 늘어난다. 해당 없는 평가유형의 데이터 행 유지/삭제를 선택할 수 있다.
+
+`fonts/NanumGothic-Regular.ttf`와 OFL 라이선스를 포함한다. Word에서 한글 레이아웃을 동일하게 보려면 **나눔고딕을 로컬 OS에 설치**한다. 글꼴 자체를 Word 파일 안에 임베드하지는 않는다. OS 기본 한글 대체 글꼴을 사용할 경우 줄바꿈·페이지 수가 달라질 수 있다.
+
+실제 Word 원본을 받으면 원본 보관 후 `core/word_generator.py`의 템플릿 어댑터를 조정한다. 현재 어댑터는 **지정된 8개 표 순서/열 헤더와 `{{status}}`, `{{date}}`, `{{opinion}}`, `{{final_check}}`, `{{provisional_check}}`, `{{review_notes}}` 문단 토큰**을 기대한다. 이 계약을 유지한 스타일 교체는 가능하다. 임의의 표 구조·병합 셀을 가진 파일을 덮어쓰는 것만으로 자동 지원한다고 주장하지 않는다. 구조가 다르면 명확히 오류를 반환하므로 별도 매핑과 회귀 테스트가 필요하다.
+
+## 실제 파일 구조
 
 ```text
-app.py                         Streamlit 진입점
-app/components/                upload, review, report_form, report_preview
-app/state.py                   세션 초기화·입력 fingerprint
-models/schemas.py              검증 가능한 데이터 모델·원문/근거/상태
-core/pdf_reader.py             형식·용량·페이지 검증, 선택적 OCR
-core/ocr_engine.py             Tesseract / 선택적 Paddle 어댑터
-core/registry_parser.py        좌표 기반 행 복원·섹션 상태·등기 행 묶음
-core/rights_parser.py          날짜·금액·변경/말소 참조 연결
-core/field_mapper.py           충돌 없는 제안값 매핑
-core/collateral_calculator.py  Decimal 계산
-core/validation.py             결과서 완결성·검토 검사
-core/word_generator.py         편집 가능한 표 생성·템플릿 인터페이스
-core/blank_document.py         파일 없이 만드는 기본 Word 패키지
-core/quick_report.py           텍스트 입력·초안 자동 매핑
-config/                        선택지·열 순서·계산 기준
-templates/collateral_report.docx
-sample_data/pdf/               가상 6사례 8개 등기 PDF + 스캔 PDF
-sample_data/expected/          독립 정답 JSON + 완성 입력 2건
-sample_data/completed_reports/ 정답 Word 2건
-sample_data/*evaluation_results.json
-scripts/                       샘플 생성·평가·환경 설치
-tests/                         파서·PDF·OCR·계산·검증·Word·화면·E2E
-docs/TEMPLATE_CONTRACT.md       실제 원본 양식 교체 계약
+collateral-report-poc/
+├── app.py
+├── requirements.txt / requirements-ocr-paddle.txt / packages.txt
+├── README.md / VERIFICATION.md / pytest.ini / .gitignore
+├── .streamlit/config.toml
+├── app/
+│   ├── state.py
+│   └── components/
+│       ├── upload.py
+│       ├── review.py
+│       ├── report_form.py
+│       └── report_preview.py
+├── core/
+│   ├── pdf_reader.py / ocr_engine.py
+│   ├── registry_parser.py / rights_parser.py / field_mapper.py
+│   ├── collateral_calculator.py / validation.py / word_generator.py
+├── models/schemas.py
+├── config/field_options.py / document_fields.py / calculation_rules.py
+├── templates/collateral_report.docx
+├── fonts/NanumGothic-Regular.ttf / OFL.txt
+├── sample_data/
+│   ├── pdf/                       # 텍스트 8개 + 스캔 2개
+│   ├── expected/                  # PDF별 독립 정답 + 완성 계산 정답
+│   ├── packages/                  # 완전한 입력 JSON 2건
+│   ├── completed_reports/         # 정답 Word 2건
+│   └── evaluation_results.json
+├── scripts/generate_samples.py / evaluate.py
+└── tests/
+    ├── conftest.py
+    ├── test_pdf_reader.py / test_parser.py
+    ├── test_calculator.py / test_validation.py
+    ├── test_word_generator.py / test_streamlit.py
+    └── test_regressions.py
 ```
 
-## 테스트·재생성
+각 Python 패키지에는 `__init__.py`를 포함한다. 샘플 생성 스크립트의 cases 목록 및 독립 정답을 늘려 20건 이상으로 확장할 수 있다. 실제 사례 파일을 공개 저장소에 넣지 않는다.
+
+## 테스트와 정확도 평가
 
 ```bash
-source .venv/bin/activate
-python -m pytest -q                   # 실제 한국어 OCR 통합 테스트 포함
-python -m pytest -q -m 'not ocr'      # OCR 미설치 환경 (OCR 검증 제외)
-python scripts/evaluate.py           # 텍스트 fixture 정답 비교, 상세 JSON 기록
-python scripts/evaluate_ocr.py       # 스캔 OCR의 실제 오인식·누락도 기록
-python scripts/generate_samples.py   # 가상 PDF/정답/Word/템플릿 덮어쓰기, 명시적 재생성 전용
+python -m pytest -q                 # 전체 테스트
+python -m pytest -q -m ocr          # 로컬 한국어 Tesseract 통합 테스트
+python -m scripts.evaluate         # 독립 정답과 자동 추출 결과 비교
 ```
 
-가상자료 생성기에서는 테스트 전용 소유자·주소·금융기관만 사용하고 주민등록번호는 생성하지 않습니다. 실제 문서와 유사한 표제부·갑구·을구 및 복수 행/열을 사용하지만 실제 공적 양식이나 모든 발급 버전을 재현하지 않습니다. 동봉한 NanumGothic 글꼴(라이선스: docs/FONT_LICENSE.txt)을 우선 사용하며 없으면 시스템 Nanum 또는 PyMuPDF 내장 한글 폰트로 대체합니다.
-정답은 파서가 만든 출력물을 재사용하지 않고 명시적 가상 fixture에서 생성합니다. `manifest.json`에 사례를 추가하는 대신 생성기 `CASES`를 확장해 20건 이상으로 늘릴 수 있습니다.
+6개 가상 사례는 단독소유 토지·건물, 공동소유 토지·건물, 집합건물 근저당권, 다중 근저당권, 가압류, 근저당권 말소를 포함한다. 2건의 완성 패키지에는 의뢰·평가·임차 정보, 독립 예상 계산값과 정답 Word가 있다. 시험 PDF에는 모두 `TEST / 가상 데이터`를 표시한다.
 
-평가 결과는 필드별 **문서 단위 완전 일치율**, 필수 필드 누락률, 매핑 오류 수, 권리 목록/말소 상태 완전 일치율 및 처리시간을 남깁니다. Word 생성·재열기 성공률과 브라우저 저장 성공률을 구분합니다. 화면에서는 수정된 최상위 영역 수·경과시간·다운로드 클릭 수를 세션에 표시하며, 브라우저 실제 저장 성공과 업무 종료 시간/필드별 수정 횟수는 아직 별도 사용자 테스트 기록이 필요합니다. 높은 합성 텍스트 PDF 정확도는 실제 문서 정확도를 보장하지 않습니다.
+`evaluate`는 소재지·면적·소유자의 필드별 정답 일치/누락/잘못된 매핑, 권리 단위 종류·접수일·금액 일치, 말소 분류, 처리시간, Word 생성 성공률과 오류 상세를 JSON으로 기록한다. 정답은 파서의 출력을 복제해 만들지 않는다. UI는 수정 이력 수·세션 경과시간·다운로드 클릭을 메모리에서 제공한다. **브라우저 파일 저장 완료는 서버가 알 수 없으므로 다운로드 성공률이라고 표시하지 않는다.** 수정 수·업무 완료시간은 사용자 테스트로 수집해야 하며 평가 JSON에서 미측정 값은 null이다.
 
-## 배포와 보안 범위
+정답 Word는 docx 재파싱으로 7영역·헤더·다중 행·합계·선택값·체크·원본 보존·미디어 미포함·편집제한 미설정을 검증한다. 별도 렌더링으로 한글·표·페이지를 시각 검토했다. 샘플 정확도를 실제 등기부등본 정확도로 일반화할 수 없다. 세부 실행 결과는 VERIFICATION.md를 참조한다.
 
-GitHub를 통한 배포의 정확한 입력값과 확인 절차: [Streamlit 배포 가이드](docs/DEPLOY_STREAMLIT.md).
+## 보안 및 배포
 
-- Community Cloud: 저장소와 `app.py` 지정, Python 3.12, `requirements.txt`·`packages.txt` 사용. **가상자료 시연 전용**이며 이 작업에서 Community Cloud 배포는 수행하지 않았습니다.
-- 사내 서버: 승인된 Python/Tesseract 환경에 설치하고 Streamlit을 내부 reverse proxy 뒤에 실행합니다. 실제 운영에는 SSO·접근권한·TLS·보관정책·접속/감사로그·리소스 제한·보안 검토가 추가로 필요합니다.
-- 세션 상태를 사용하며 전역 캐시/사용자 DB/원문 파일 영구 저장을 사용하지 않습니다. 좌측 `현재 세션 자료 지우기`로 메모리 자료를 지웁니다. 세션은 서버 메모리에 머무르며, 운영체제 메모리 삭제까지 보장하는 보안 삭제 기능은 아닙니다.
-- 파일당 20MB/40페이지, 건당 12개/60MB 제한, 파일 경로/제어문자/중복 이름/PDF magic/암호화를 검사합니다. 렌더링 픽셀 수도 제한합니다. 악성 PDF 격리 샌드박스나 바이러스 검사는 이 PoC 범위에 없습니다.
-- 사용자 파일·OCR 원문은 코드에서 로그에 기록하지 않습니다. 파일은 세션별로 관리하고 생성 Word도 요청마다 새 바이트 버퍼에서 만듭니다. Python 오류/인프라 로그의 개인정보 방지는 실제 운영 전 별도 검토해야 합니다.
+업로드 원문/파일은 서버 디스크에 저장하지 않고 Streamlit 세션 메모리에 보관한다. 공유 전역 캐시를 사용하지 않는다. 세션 초기화 버튼으로 애플리케이션 메모리 참조와 위젯을 비운다. 서버 로그에 업로드 파일명·OCR 원문·문서 내용을 출력하지 않으며 예외 메시지도 고정 문구로 처리한다. OCR 임시파일은 pytesseract 자체 정리 기능에 맡긴다. 프로세스 강제종료 시 OS 임시영역 잔재 가능성은 운영 정책으로 보완해야 한다. 디스크 스왑/메모리 덤프 삭제나 운영 보안까지 보장하는 제품은 아니다. 다운로드는 세션별 bytes로 생성한다.
 
-## 실제 준법지원팀 검증 전 확인
+확장자뿐 아니라 PDF 매직 바이트·실제 파싱·암호화·용량·페이지 수를 검증하고 파일명을 정규화한다. 개인식별번호 가상 데이터는 만들지 않는다. 앱 자체 외부 AI/OCR 호출은 없으며 Streamlit 통계 전송은 꺼져 있다. 선택 설치/배포 시의 패키지 다운로드는 별도 네트워크 작업이다. 실제 운영에서는 인터넷 차단·DLP·백신·격리·인증·인가·접근로그·백업/삭제 정책·동시 처리 제한·취약점 점검·라이선스 검토가 필요하다. PyMuPDF의 라이선스 조건도 사내 도입 시 확인한다.
 
-1. 실제 Word 원본의 열·병합·폭·페이지 배치와 템플릿 계약을 대조합니다.
-2. 공제대상, 선순위, 권리 변경·말소/소유권의 유효성, 평가 산식·단위·천원 처리 범위를 확정합니다.
-3. 익명화·승인된 실제 발급 양식으로 좌표/표 경계, OCR 숫자·한글, 누락·충돌 및 소유자 이력의 오류를 측정합니다.
-4. Word 인쇄·페이지 나눔을 Microsoft Word에서 확인하고 담당자 서명/승인 절차를 정합니다.
-5. 실제 개인정보 반입 전 사내 보안 승인을 받습니다. 이 PoC를 운영 수준의 보안·법률 판단 도구로 간주하지 마세요.
+### Streamlit Community Cloud 가상 시연
 
-현재 외부시스템 연동, 법률 자동 확정, 실제 문서 전 유형 범용 인식, 취소선 기반 자동 유효성 확정, PDF 좌표 하이라이트, Word 인쇄 렌더링, 브라우저 파일 저장 완료 추적, 영구 감사로그/인증은 지원하지 않습니다.
+가상 자료만 포함한 저장소를 생성한 뒤 Python 3.12, 메인 파일 `app.py`를 지정한다. 저장소 하위 폴더를 그대로 올리면 해당 상대 경로를 메인 파일로 지정한다. `requirements.txt`, `packages.txt`, `.streamlit/config.toml`, 템플릿과 샘플을 함께 배포한다. `packages.txt`가 Tesseract 한국어 패키지를 설치한다. 실제 클라우드 계정 배포는 이번 작업에서 수행하지 않았다. 스캔 OCR은 인스턴스 자원·제한시간에 영향을 받는다. 공개 Cloud는 실제 등기 처리용 환경이 아니다.
+
+### 사내 서버
+
+승인된 Python 3.12 환경에 의존성과 OCR 언어 데이터를 오프라인 배포하고, 네트워크 접근을 차단한 뒤 동일 명령으로 실행할 수 있다. 접속을 넓히기 전 사내 인증 프록시·TLS·접근통제·격리·자원 한도·보안 검토를 적용한다. 기본 PoC에 사용자 DB/역할 권한·지속 저장·전자결재 제출 기능은 없다.
+
+## 한계와 실제 업무 테스트 전 확정사항
+
+- 실제 Word 원본·실제 등기부등본을 제공받지 않았다. 현재 파서는 가상 표 구조 중심의 규칙 기반 초기 구현이다. 실제 발급기관/버전별 열 배치·표제부 주소 표기·다중 페이지·복잡한 부기등기에서 누락·오인 가능성이 있다. 취소선만 있는 말소와 소유권 이력의 법적 유효성을 자동 판단하지 않는다.
+- 현재 소유자·순위/변경/이전/공동담보·복잡한 말소를 법적으로 확정하지 않는다. OCR 실패나 인식 누락은 ‘권리 없음’의 근거가 될 수 없다.
+- 평가방법과 적용률, 선순위 공제 기준, 공동담보 중복 공제 방식, 공제대상 보증금 기준, 천원 미만 처리, 해당 없음의 허용 범위를 내부에서 확정해야 한다.
+- 건축물대장·토지이용계획·KB시세·임대차 증빙 자동 추출 및 외부 시스템 연동은 구현하지 않았다. 증빙은 업로드·원본 조회·수동 검토한다.
+- PaddleOCR는 선택 어댑터만 제공하며 실행 검증하지 않았다. PDF 미리보기는 페이지 이미지이고 Word 미리보기는 내용 표다.
+- 실제 표준양식 반영 후 20건 이상의 승인된 비식별 사례로 필드/말소/공동담보 회귀 테스트와 담당자 수정·작성시간·실제 다운로드 성공률을 측정한다.
+- 최종/임차 미반영 문구의 업무적 의미, ‘추가담소’ 원문 표기, 실제 필수 항목과 서명/결재란, 승인 권한을 준법지원팀과 확정한다.
+
+기술 참고: [Streamlit 공식 문서](https://docs.streamlit.io/), [PyMuPDF 공식 문서](https://pymupdf.readthedocs.io/), [Tesseract 공식 문서](https://tesseract-ocr.github.io/tessdoc/), [Pydantic 공식 문서](https://docs.pydantic.dev/), [python-docx 공식 문서](https://python-docx.readthedocs.io/).

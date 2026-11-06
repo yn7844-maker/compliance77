@@ -1,8 +1,8 @@
-import sys
 from pathlib import Path
 import pytest
-ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from models.schemas import Report
+ROOT=Path(__file__).resolve().parents[1]
 @pytest.fixture
-def complete():
-    return Report.model_validate_json((ROOT/'sample_data/expected/case03_report.json').read_text())
+def root(): return ROOT
+@pytest.fixture
+def complete(root): return Report.model_validate_json((root/"sample_data/packages/package_01.json").read_text())
